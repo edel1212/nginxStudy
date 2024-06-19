@@ -25,3 +25,4 @@
 
 ### 사용 예제
 - Reverse Proxy를 사용한 로드 밸런싱
+  - [이동](https://github.com/edel1212/nginxStudy/tree/main/reverse-proxy)
