@@ -21,3 +21,59 @@
   - 1 . 클라이언트는 Reverse Proxy를 서버로 인식하고 요청을 보냄
   - 2 . Reverse Proxy는 해당 요청을 적절한 백엔드 서버로 전달하고, 서버로부터 응답을 받은 후 이를 클라이언트에게 반환
   - ex) `[Client] → [Reverse Proxy] → [Backend Server(s)]`
+
+  
+### 예제 코드
+
+- #### Nginx
+  - Docker를 사용 하여 구동하였다.
+  - 설정은 `nginx.conf` 내에서 사용한다.
+  - Docker-compose
+    ```yaml
+    # docker-compose.yml
+    
+    version: '3'
+    services:
+      nginx:
+        image: nginx:latest
+        container_name: reverse-proxy
+        ports:
+          - "80:80"
+        # Volumes 설정을 통해 nginx.conf 설정을 동기화 시킴
+        volumes:
+          - ./nginx.conf:/etc/nginx/nginx.conf
+    ```
+  - nginx.conf
+    - 주의 사항은 Docker-compose를 사용해서 구동하였기에 연결하려는 upstream(서버들)의 주소는 **호스트 서버의 주소** 또는 **Docker-Network** 주소해야한다.
+    ```yaml
+    # /etc/nginx/nginx.conf
+    
+    # 전역 컨텍스트
+    user nginx;  # Nginx가 실행되는 사용자
+    worker_processes auto;  # 자동으로 워커 프로세스 수를 설정
+    pid /run/nginx.pid;  # PID 파일의 위치
+    
+    events {
+        worker_connections 1024;  # 최대 연결 수 설정
+    }
+    
+    # HTTP 컨텍스트
+    http {
+        # Upstream 블록
+        upstream backend {
+            ## ℹ️ localhost로 접근하면 127.0.0.1로 접근한다 하지만 Docker를 사용했기에 그러함
+            server 192.168.1.45:8081;  # 첫 번째 백엔드 서버
+            server 192.168.1.45:8082;  # 두 번째 백엔드 서버
+        }
+    
+        # 서버 블록
+        server {
+            listen 80;  # 이 서버가 요청을 수신하는 포트
+    
+            # 위치 블록
+            location / {
+                proxy_pass http://backend;  # 'backend' 업스트림 그룹으로 요청 전달
+            }
+        }
+    }
+    ```
