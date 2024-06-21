@@ -83,7 +83,7 @@
 
 - #### Servers(2개 적용)
   - 간단하게 요청 -> 해당 포트를 응답하는 서버를 구성
-    - ℹ️ 해당 서버의 도메인 정보를 확인하는 코드를 확인해보니 `upstream`에서 지정한 주소로 반환을 확인 `upstream {{지정명}}`
+    - ℹ️ 해당 서버의 도메인 정보를 확인하는 코드를 확인해보니 Nginx에서 설정한 `upstream`의 주소로 반환하는 것을 확인 `upstream {{지정명}}`
       - 하단 `proxy_pass http://backend;`가 실질적으로 pass하는 부분이긴함
   - Controller
     ```java
@@ -106,6 +106,28 @@
         }
     }
     ```
-  
+
+- #### Hedaer 값 적용 확인
+  - 문제 없이 Header값이 잘 전달 된다.
+  - Controller
+    ```java
+    @RestController
+    @RequestMapping("/api")
+    public class ApiController {
+    
+        @Value("${server.port}")
+        private Integer port;
+        
+        @GetMapping
+        public String greeting(HttpServletRequest httpServletRequest) {
+            
+            String authorization =  httpServletRequest.getHeader(HttpHeaders.AUTHORIZATION);
+            // This domain is ::: This domain is ::: http://backend /// Port is ::: 8082 ///// authorization :: Bearer test
+            return "This domain is ::: " + ServletUriComponentsBuilder.fromCurrentContextPath().toUriString()
+                    + " /// Port is ::: " + port + " ///// authorization :: " + authorization;
+        }
+    }
+    ```
+
 
 
