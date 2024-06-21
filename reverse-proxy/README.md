@@ -59,6 +59,9 @@
     
     # HTTP 컨텍스트
     http {
+        # ℹ️ 원한다면 아래에 로드밸런싱에 사용될 메서드를 지정 가능
+        ## {Load Balancing Method} # 로드 밸런싱 메서드 지정 ex) ip_hash;
+    
         # Upstream 블록
         upstream backend {
             ## ℹ️ localhost로 접근하면 127.0.0.1로 접근한다 하지만 Docker를 사용했기에 그러함
@@ -74,6 +77,22 @@
             location / {
                 proxy_pass http://backend;  # 'backend' 업스트림 그룹으로 요청 전달
             }
+        }
+    }
+    ```
+
+- #### Servers(2개 적용)
+  - 간단하게 요청 -> 해당 포트를 응답하는 서버를 구성
+  - Controller
+    ```java
+    @RestController
+    @RequestMapping("/api")
+    public class ApiController {
+        @Value("${server.port}")
+        private Integer port;
+        @GetMapping("/greeting")
+        public String greeting() {
+            return "This port is ::: " + port;
         }
     }
     ```
