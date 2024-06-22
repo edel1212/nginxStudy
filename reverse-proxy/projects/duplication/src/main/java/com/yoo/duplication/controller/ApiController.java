@@ -27,7 +27,29 @@ public class ApiController {
          * This domain is ::: http://backend
          * */
         String authorization =  httpServletRequest.getHeader(HttpHeaders.AUTHORIZATION);
-        return "This domain is ::: " + ServletUriComponentsBuilder.fromCurrentContextPath().toUriString()
-                + " /// Port is ::: " + port + " ///// authorization :: " + authorization;
+        String xRealIp = httpServletRequest.getHeader("X-Real-IP");
+        String xForwardedFor = httpServletRequest.getHeader("X-Forwarded-For");
+        String host = httpServletRequest.getHeader(HttpHeaders.HOST);
+
+
+        StringBuilder result = new StringBuilder("This domain is ::: ");
+        result.append(ServletUriComponentsBuilder.fromCurrentContextPath().toUriString());
+        result.append("            ");
+        result.append("// Server Port is ::: ");
+        result.append(port);
+        result.append("            ");
+        result.append("// authorization is ::: ");
+        result.append(authorization);
+        result.append("            ");
+        result.append("// Client Access Ip is ::: " + httpServletRequest.getRemoteAddr());
+        result.append("            ");
+        result.append("// xForwardedFor Ip is ::: " + xForwardedFor);
+        result.append("            ");
+        result.append("// xRealIp  is ::: " + xRealIp);
+        result.append("            ");
+        result.append("// Host is ::: " + host);
+        result.append("            ");
+
+        return result.toString();
     }
 }
