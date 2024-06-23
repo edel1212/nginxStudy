@@ -62,3 +62,8 @@
   - [이동](https://github.com/edel1212/nginxStudy/tree/main/proxy)
 - Reverse Proxy를 사용한 로드 밸런싱
   - [이동](https://github.com/edel1212/nginxStudy/tree/main/reverse-proxy)
+- multiple-nginx-server를 사용한 다중 Nginx 서버
+  - [이동](https://github.com/edel1212/nginxStudy/tree/main/multiple-nginx-server)
+
+
+    
