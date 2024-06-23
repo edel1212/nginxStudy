@@ -1,0 +1,14 @@
+package com.yoo.proxy_server.controller;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api")
+public class FooController {
+    @GetMapping
+    public String helloWorld(){
+        return "Hi";
+    }
+}
