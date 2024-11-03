@@ -31,7 +31,18 @@
 
 ## Nginx 설정
 
-- ### Docker-compose
+```properties
+# ℹ️ worker_processes 설정은 하드웨어의 core 수에 맞추는게 좋다 - auto 설정 시 자동
+#
+# > 주의 사항
+#   💬 연결하려는 upstream(서버들)의 주소 설정
+#      - nginx만 Docker일 경우     :: `server host.docker.internal:{지정 포트 번호};`
+#      - 동일 Docker Network 경우  ::` server service1:3306;`
+```
+
+### Nginx만 Docker 사용
+
+- #### docker compose
 
 ```yaml
 # docker-compose.yml
@@ -46,21 +57,7 @@ services:
       - ./nginx.conf:/etc/nginx/nginx.conf
 ```
 
-- ### nginx.conf
-
-```properties
-# ℹ️ worker_processes 설정은 하드웨어의 core 수에 맞추는게 좋다 - auto 설정 시 자동
-```
-
-- 주의 사항
-
-  - Docker-compose를 사용해서 구동하였기에 연결하려는 upstream(서버들)의 주소 설정
-
-    - Docker -> 호스트 경우
-      - `server host.docker.internal:{지정 포트 번호};`
-    - 동일 Docker Network 경우
-
-      - `server service1:3306;`
+- #### nginx.conf
 
 ```yaml
 # /etc/nginx/nginx.conf
@@ -97,6 +94,95 @@ http {
             proxy_pass http://backend;  # 'backend' 업스트림 그룹으로 요청 전달
         }
     }
+}
+```
+
+### Nginx, Server Dokcer 사용
+
+```properties
+# ℹ️ 주의 사항
+#    - nginx, servers 는 모두 같은 네트워크를 사용해서 연결 되어야 한다.
+#       ㄴ> 그렇지 않을 경우 nginxrk upstream을 찾지 못함
+#    - sever들은 꼭 포트 포워딩을 해줘야 한다.
+```
+
+- #### docker compose
+
+```yaml
+# docker-compose.yml
+services:
+  nginx:
+    image: nginx:latest
+    container_name: nginx_load_balancer
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - app1
+      - app2
+    networks:
+      - {지정 값}
+
+  app1:
+    image: openjdk:17
+    container_name: spring_app1
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./{내가 지정한 파일명.jar}:/app/{내가 지정한 파일명.jar}
+    command:
+      ["java", "-jar", "/app/{내가 지정한 파일명.jar}", "--spring.profiles.active={구분 값}"]
+    networks:
+      - {지정 값}
+
+  app2:
+    image: openjdk:17
+    container_name: spring_app2
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./{내가 지정한 파일명.jar}:/app/{내가 지정한 파일명.jar}
+    ["java", "-jar", "/app/{내가 지정한 파일명.jar}", "--spring.profiles.active={구분 값}"]
+    networks:
+      - {지정 값}
+
+networks:
+  {지정 값}:
+    driver: bridge
+```
+
+- #### nginx.conf
+
+```yaml
+# /etc/nginx/nginx.conf
+
+user nginx;
+worker_processes auto;
+
+pid /run/nginx.pid;
+
+events {
+  worker_connections 1024;
+}
+
+http {
+  upstream myapp {
+    server {같은 네트워크 내 컨테이너명}:8080;
+    server {같은 네트워크 내 컨테이너명}:8081;
+  }
+
+  server {
+    listen 80;
+
+    location / {
+      proxy_pass http://myapp;  # Forward to the upstream group
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $scheme;
+    }
+  }
 }
 ```
 
@@ -214,7 +300,7 @@ http {
   }
   ```
 
-- ### Servers (`Controller`)
+- ### Servers
 
   ```java
   @RestController
@@ -230,7 +316,6 @@ http {
           String xRealIp = httpServletRequest.getHeader("X-Real-IP");
           String xForwardedFor = httpServletRequest.getHeader("X-Forwarded-For");
           String host = httpServletRequest.getHeader(HttpHeaders.HOST);
-
 
           StringBuilder result = new StringBuilder("This domain is ::: ");
           result.append(ServletUriComponentsBuilder.fromCurrentContextPath().toUriString());
