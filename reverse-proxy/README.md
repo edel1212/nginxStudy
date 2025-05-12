@@ -295,6 +295,9 @@ http {
               #  ℹ️ 클라이언트가 원래 보낸 Server의 도메인 값 확인.
               #  ㄴ> 필요성 : 클라이언트가 보낸 Host 헤더는 원래 요청의 대상 도메인 이름을 나타냅니다.
               proxy_set_header Host $http_host;
+              # 요청이 들어온 포트를 백엔드에 전달
+              # ㄴ> Spring 내 "server.forward-headers-strategy=framework" 설정이 필요함
+              proxy_set_header X-Forwarded-Port $server_port;
           }
       }
   }
